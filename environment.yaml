@@ -1,0 +1,14 @@
+name: popgen
+channels:
+- conda-forge
+- bioconda
+- defaults
+dependencies:
+- python=3.11
+- plink=1.90
+- admixture
+- bcftools
+- jupyterlab
+- pandas
+- matplotlib
+- seaborn

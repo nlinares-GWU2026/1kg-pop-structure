@@ -1,0 +1,10 @@
+data/raw/
+*.vcf.gz
+*.vcf.gz.tbi
+*.bed
+*.bim
+*.fam
+*.log
+__pychache__/
+.ipynb_checkpoints/
+*.DS_Store
