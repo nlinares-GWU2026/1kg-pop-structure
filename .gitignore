@@ -8,3 +8,4 @@ data/raw/
 __pychache__/
 .ipynb_checkpoints/
 *.DS_Store
+miniconda.sh
