@@ -176,13 +176,59 @@ plink \
 | Removed by LD pruning | 60,604 |
 | **Retained for analysis** | **7,751** |
 
-The relatively aggressive reduction (89% of SNPs removed) is consistent with the high LD structure expected on chromosome 22, which contains several large LD blocks. Full genome analysis across all 22 autosomes would yield a proportionally larger retained set (around 80,000-150,000 independent SNPs), providing greater precision for both PCA and ADMIXTURE. 
+The relatively aggressive reduction (89% of SNPs removed) is consistent with the high LD structure expected on chromosome 22, which contains several large LD blocks. Full genome analysis across all 22 autosomes would yield a proportionally larger retained set (around 80,000 - 150,000 independent SNPs), providing greater precision for both PCA and ADMIXTURE. 
+
+### 3.5 Step 4a - Principal Component Analysis
+
+PCA was performed on the LD-pruned dataset using PLINK:
+
+```bash
+plink \
+  --bfile results/plink/chr22_pruned \
+  --pca 10 \
+  --out results/pca/chr22_pca
+```
+
+PLINK computes PCA by first constructing a genetic relatedness matrix (GRM) - a 2,504 * 2,504 matrix where each cell describes the genotypic covariance between two individuals across all 7,751 pruned SNPs. Eigendecomposition of this matrix yields principal components ranked by the amount of genetic variance they explain. The top 10 principal components were retained. Multithread computation (27 threads) was used automatically by PLINK for the matrix operations. 
+
+Output files:
+- `results/pca/chr22_pca.eigenval` — 10 eigenvalues
+- `results/pca/chr22_pca.eigenvec` — PC scores for all 2,504 individuals
 
 ---
 
 ## 4. Results
 
-*To be completed after Steps 3–5 (LD pruning, PCA, ADMIXTURE, and visualization).*
+### 4.1 PCA
+
+The top 10 principal components were computed from 7,751 LD-pruned SNPs across 2,504 individuals. Eigenvalues and percent variance explained are summarized below:
+
+| PC | Eigenvalue | % Variance Explained |
+|----|-----------|---------------------|
+| PC1 | 143.411 | 48.7% |
+| PC2 | 71.062 | 24.1% |
+| PC3 | 27.363 | 9.3% |
+| PC4 | 22.790 | 7.7% |
+| PC5 | 5.511 | 1.9% |
+| PC6 | 5.265 | 1.8% |
+| PC7 | 4.956 | 1.7% |
+| PC8 | 4.773 | 1.6% |
+| PC9 | 4.702 | 1.6% |
+| PC10 | 4.599 | 1.6% |
+
+PC1 and PC2 together explain 72.8% of total genetic variance. This is a pronounced result demonstrating that the vast majority of population-level genetic signal is captured in just two dimensions. A sharp drop in variance is observed between PC4 (7.7%) and PC5 (1.9%), forming a clear scree plot elbow. This indicates that the four leading PCs capture the major axes of human population structure, while PC5 onward reflect finer-scale or residual variation. 
+
+PC1 is expected to represent the African vs. Non-African divergence, the deepest split in genetic diversity, capturing the out-of-Africa bottleneck ~ 60,000 - 70,000 years ago. PC2 likely captures the East Asian vs. European divergence. PC3 and PC4 are expected to reflect finer substructure within subpopulations. Visual confirmation of these interpretations will be provided by the PCA scatterplot (Section 4.3).
+
+*PCA scatter plot and full biological interpretation to be added after Step 5 visualization.*
+
+### 4.2 ADMIXTURE
+
+*To be completed after Step 4b.*
+
+### 4.3 Figures
+
+*To be completed after Step 5 visualization.*
 
 ---
 
@@ -191,6 +237,7 @@ The relatively aggressive reduction (89% of SNPs removed) is consistent with the
 - This analysis currently uses chromosome 22 only. While sufficient for demonstrating the pipeline and validating methodology, full-genome analysis across all 22 autosomes would provide more precise population structure estimates and greater statistical power for ADMIXTURE.
 - The HWE filter was applied to the pooled multi-population sample. A more rigorous approach would apply HWE filters within each population separately, avoiding Wahlund effect false positives while catching true genotyping errors.
 - Sex chromosomes (X, Y) were excluded. Population structure on the X chromosome can reveal additional signals of sex-biased migration and demographic history.
+- PCA eigenvalues reflect chr22 only and are therefore not directly comparable to published whole-genome results. The high variance explained by PC1 (48.7%) and PC2 (24.1%) is inflated relative to full-genome estimates, where PC1  typically explains 10-20% of variance, because fewer total PCs are competing to explain the same population signal across a single chromosome. 
 
 ---
 
