@@ -127,7 +127,56 @@ plink \
 
 **Notable observations:**
 
- The `--mind` and `--geno` filters removed zero variants or individuals, consistent with the exceptionally complete genotyping in the 1000 Genomes Phase 3 release (total genotyping rate = 1.0). The large number of HWE violations (47,339) likely reflects the **Wahlund effect** - when individuals from genetically differentiated populations are pooled, apparent HWE deviations arise at SNPs where allele frequencies differ between groups, even if each population individually is in HWE. The dominant filter was MAF, which removed ~89% of variants. This reflects the well-established genomic observation 
+ The `--mind` and `--geno` filters removed zero variants or individuals, consistent with the exceptionally complete genotyping in the 1000 Genomes Phase 3 release (total genotyping rate = 1.0). The large number of HWE violations (47,339) likely reflects the **Wahlund effect** - when individuals from genetically differentiated populations are pooled, apparent HWE deviations arise at SNPs where allele frequencies differ between groups, even if each population individually is in HWE. The dominant filter was MAF, which removed ~89% of variants. This reflects the well-established genomic observation that the vast majority of human genetic variants are rare, with common variants (MAF > 5%) representing a minority of total SNP diversity.
+
+ ### 3.4 Step 3 - Linkage Disequilibrium Pruning
+
+Nearby SNPs on the same chromosome tend to be statistically correlated due to linkage disequilibrium (LD), which is the tendency for alleles at physically close loci to be inherited together rather than shuffling independently at each generation. This correlation is a direct consequence of the recombination pattern. Long haplotype blocks are passed from parent to child intact, meaning SNPs within a block carry a lot of redundant information.
+
+If correlated SNPs are included in PCA or ADMIXTURE without pruning, genomic regions with strong LD effectively receive an inflated weight in the analysis, where a dense LD block of "N" correlated SNPs contributes "N" times as much signal as a single SNP elsewhere. This can potentially drive the principal components that reflect local LD architecture rather than genome-wide ancestry patterns.  
+
+LD pruning was performed in 3 steps. First, because all 68,355 post-QC variants carried missing IDs (`.`) in the original VCF (this is a common feature of 1000 Genomes data where not all variants have assigned rsIDs), unique identifiers were assigned using PLINK's `--set-missing-var-ids` flag with the format `chromosome:position:ref_allele:alt_allele`:
+
+```bash
+plink \
+  --bfile chr22_qc \
+  --set-missing-var-ids @:#:$1:$2 \
+  --make-bed \
+  --out chr22_qc_ids
+```
+
+The `chromosome:position:ref:alt` format was required rather than `chromosome:position` because multiple variants existed at identical genomic positions (for example: a SNP and an indel are at the same position of `NN:XXXXXXXX`), which would have produced duplicate IDs under the simpler format.
+
+LD pruning was then performed using PLINK's sliding window algorithm:
+
+```bash
+plink \
+  --bfile chr22_qc_ids \
+  --indep-pairwise 50 10 0.2 \
+  --out pruning2
+```
+
+The 3 parameters define the pruning action. A window of **50 SNPs** is examined at a time. Within each window, all pairwise r^2 values are calculated, and any SNP forming a pair with r^2 > **0.2** with another SNP in the window is flagged for removal (the SNP having the lower minor allele frequency - MAF is removed preferentially). The window then advances by **10 SNPs** and the process repeats across the chromosome. An r^2 threshold of 0.2 represents the standard for population structure analysis. It is stringent enough to break up meaningful LD blocks while retaining sufficient SNP density for reliable inference. 
+
+The pruned SNP list was then used to extract the independent subest:
+
+```bash
+plink \
+  --bfile chr22_qc_ids \
+  --extract pruning2.prune.in \
+  --make-bed \
+  --out chr22_pruned
+```
+
+**LD pruning results:**
+ 
+| Stage | SNPs |
+|-------|------|
+| Post-QC input | 68,355 |
+| Removed by LD pruning | 60,604 |
+| **Retained for analysis** | **7,751** |
+
+The relatively aggressive reduction (89% of SNPs removed) is consistent with the high LD structure expected on chromosome 22, which contains several large LD blocks. Full genome analysis across all 22 autosomes would yield a proportionally larger retained set (around 80,000-150,000 independent SNPs), providing greater precision for both PCA and ADMIXTURE. 
 
 ---
 
