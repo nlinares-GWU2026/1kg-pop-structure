@@ -17,3 +17,4 @@ results/admixture/log_K*_debug.out
 results/plink/*.nosex
 results/plink/pruning*.prune.in
 results/plink/pruning*.prune.out
+results/admixture/*.nosex
