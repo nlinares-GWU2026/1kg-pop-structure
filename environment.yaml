@@ -6,8 +6,12 @@ channels:
 dependencies:
 - python=3.11
 - plink=1.90
-- admixture
 - bcftools
+- r-base=4.3
+- r-biocmanager
+# LEA installed inside R: BiocManager::install('LEA')
+- admixture
+# ADMIXTURE v1.3.0 excluded - segfaults on WSL2 (exit code 139
 - jupyterlab
 - pandas
 - matplotlib
