@@ -9,3 +9,11 @@ __pychache__/
 .ipynb_checkpoints/
 *.DS_Store
 miniconda.sh
+results/admixture/*.geno
+results/admixture/*.raw
+results/admixture/chr22.snmf/masked/
+results/admixture/chr22.snmf/K*/run*/*.G
+results/admixture/log_K*_debug.out
+results/plink/*.nosex
+results/plink/pruning*.prune.in
+results/plink/pruning*.prune.out

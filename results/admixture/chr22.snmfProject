@@ -1,0 +1,16 @@
+new("snmfProject", snmfProject.file = "chr22.snmfProject", projDir = "/mnt/c/Users/nelin/OneDrive/Desktop/Git Projects/1kg-pop-structure/results/admixture/", 
+    snmfDir = "chr22.snmf/", input.file = "chr22.geno", runs = list(), 
+    K = c(2L, 3L, 4L, 5L, 6L, 7L, 8L, 2L, 3L, 4L, 5L, 6L, 7L, 
+    8L, 2L, 3L, 4L, 5L, 6L, 7L, 8L), snmfClass.files = c("K2/run1/chr22_r1.2.snmfClass", 
+    "K3/run1/chr22_r1.3.snmfClass", "K4/run1/chr22_r1.4.snmfClass", 
+    "K5/run1/chr22_r1.5.snmfClass", "K6/run1/chr22_r1.6.snmfClass", 
+    "K7/run1/chr22_r1.7.snmfClass", "K8/run1/chr22_r1.8.snmfClass", 
+    "K2/run2/chr22_r2.2.snmfClass", "K3/run2/chr22_r2.3.snmfClass", 
+    "K4/run2/chr22_r2.4.snmfClass", "K5/run2/chr22_r2.5.snmfClass", 
+    "K6/run2/chr22_r2.6.snmfClass", "K7/run2/chr22_r2.7.snmfClass", 
+    "K8/run2/chr22_r2.8.snmfClass", "K2/run3/chr22_r3.2.snmfClass", 
+    "K3/run3/chr22_r3.3.snmfClass", "K4/run3/chr22_r3.4.snmfClass", 
+    "K5/run3/chr22_r3.5.snmfClass", "K6/run3/chr22_r3.6.snmfClass", 
+    "K7/run3/chr22_r3.7.snmfClass", "K8/run3/chr22_r3.8.snmfClass"
+    ), n = 2504L, L = 7751L, creationTime = structure(1779380262.42401, class = c("POSIXct", 
+    "POSIXt")))
