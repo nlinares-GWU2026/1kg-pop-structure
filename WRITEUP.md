@@ -11,9 +11,9 @@
 
 Understanding population structure - the non-random distribution of genetic variation across human groups - is crucial to developing and understanding modern population genetics. As humans migrated out of Africa roughly 60,000-70,000 years ago and spread across the globe, geographically isolated populations accumulated distinct patterns of genetic variation through genetic drift, natural selection, and unique mutation histories. These differences are subtle at the individual level but statistically detectable across the genome. 
 
-Population structure and analysis have direct practical importance beyond historical inference. In genome-wide association studies (GWAS), failure to account for population stratification leads to misleading associations between genetic variants and traits, like false positives driven by correlation between ancestry and disease prevalence rather than biology. The methods developed in this project (PCA and ADMIXTURE) are the standard tools used to detect and correct for population stratification in large-scale genetic studies. 
+Population structure and analysis have direct practical importance beyond historical inference. In genome-wide association studies (GWAS), failure to account for population stratification leads to misleading associations between genetic variants and traits, like false positives driven by correlation between ancestry and disease prevalence rather than biology. The methods developed in this project (PCA and sNMF-based ancestry estimation) are standard tools used to detect and correct for population stratification in large-scale genetic studies. 
 
-This project uses genome-wide SNP data from the 1000 Genomes Project Phase 3 release to reconstruct population structure across 26 globally distributed human populations, with the goals of: 1) visualizing ancestry-driven genetic clustering via PCA, and 2) estimating ancestral population proportions via ADMIXTURE analysis.
+This project uses genome-wide SNP data from the 1000 Genomes Project Phase 3 release to reconstruct population structure across 26 globally distributed human populations, with the goals of: 1) visualizing ancestry-driven genetic clustering via PCA, and 2) estimating ancestral population proportions via sparse Non-negative Matrix Factorization (sNMF) using the R package LEA.
 
 ---
 
@@ -66,9 +66,10 @@ All analyses were conducted in a conda virtual environment (`popgen`) running on
 | Tool | Version | Purpose |
 |------|---------|---------|
 | PLINK | v1.9.0-b.8 (Oct 2024) | QC filtering, LD pruning, PCA |
-| ADMIXTURE | — | Ancestry estimation |
+| LEA (R Package) | 3.24.0 | Ancestry estimation via sNMF |
 | Python | 3.11 | Visualization |
-| bcftools | — | VCF inspection |
+| bcftools | 1.23.1 | VCF inspection |
+| R | 4.6.0 | sNMF analysis | 
 
 ### 3.2 Step 1 - Data Acquisition
 
@@ -178,6 +179,8 @@ plink \
 
 The relatively aggressive reduction (89% of SNPs removed) is consistent with the high LD structure expected on chromosome 22, which contains several large LD blocks. Full genome analysis across all 22 autosomes would yield a proportionally larger retained set (around 80,000 - 150,000 independent SNPs), providing greater precision for both PCA and ADMIXTURE. 
 
+**Note on duplicate pruned datasets:** Two separate LD-pruned datasets were created from the same QC-filtered input. The first (`chr22_pruned`) uses colon-separated SNP IDs (`chr:pos:ref:alt`) and was used for PCA, which has no restrictions on variant ID format. The second (`chr22_pruned_admix`) uses underscore-separated IDs (`chr_pos_ref_alt`) and was created specifically for sNMF ancestry estimation. ADMIXTURE v1.3.0 crashes silently when SNP IDs contain colons due to internal parsing behavior, and this issue was discovered during analysis (see Limitations). Both datasets contain identical SNP sets (7,751 variants, 2,504 individuals) - only the ID formatting differs.
+
 ### 3.5 Step 4a - Principal Component Analysis
 
 PCA was performed on the LD-pruned dataset using PLINK:
@@ -194,6 +197,25 @@ PLINK computes PCA by first constructing a genetic relatedness matrix (GRM) - a 
 Output files:
 - `results/pca/chr22_pca.eigenval` — 10 eigenvalues
 - `results/pca/chr22_pca.eigenvec` — PC scores for all 2,504 individuals
+
+### 3.6 Step 4b - Ancestry Estimation via sNMF
+
+**Software note:** Ancestry estimation was initially planned using ADMIXTURE v1.3.0 (Alexander et al, 2009). However, this binary produces a segmentation fault (exit code 139) on WSL2 immediately after reading genotype data, regardless of stack size settings (`ulimit -s unlimited`). This is a known incompatibility between ADMIXTURE's statically linked binary and WSL2's memory model. Analysis was instead performed using the `snmf()` function from the R package LEA (Frichot & François, 2015), which implements sparse Non-negative Matrix Factorization. It is an algorithm that is mathematically equivalent to ADMIXTURE and produces comparable ancestry proportion matrices (Q matrices) and model fit statistics.
+
+Ancestry estimation was run for K = 2 through K = 8 ancestral populations, with 3 independent repetitions per K value to ensure mathematical accuracy and prevent statistical errors. The best run per K was selected based on minimum cross-entropy, which is analogous to ADMIXTURE's cross-validation error. It measures the model's accuracy by checking how well the model predicts hidden DNA data. Lower scores mean a better fit.
+
+```r
+project <- snmf(
+  "results/admixture/chr22.geno",
+  K = 2:8,
+  entropy = TRUE,
+  repetitions = 3,
+  project = "new",
+  seed = 42
+)
+```
+
+Prior to running sNMF, PLINK genotypes were exported in raw format (`--recodeA`) and converted to LEA's `.geno` format. It is a plain text matrix where rows represent SNPs, columns represent individuals, and values are 0, 1, 2, or 9 (representing missing data). All 7,751 SNPs had complete genotype data so no missing value encoding was required. 
 
 ---
 
@@ -222,9 +244,23 @@ PC1 is expected to represent the African vs. Non-African divergence, the deepest
 
 *PCA scatter plot and full biological interpretation to be added after Step 5 visualization.*
 
-### 4.2 ADMIXTURE
+### 4.2 Anccestry Estimation (sNMF)
 
-*To be completed after Step 4b.*
+Cross-entropy values for K = 2 through K = 8 are summarized below:
+
+| K | Cross-Entropy | Change from K-1 |
+|---|--------------|-----------------|
+| 2 | 0.69549 | — |
+| 3 | 0.68053 | -0.01496 |
+| 4 | 0.67573 | -0.00480 |
+| 5 | 0.67164 | -0.00409 |
+| 6 | 0.67177 | +0.00013 |
+| 7 | 0.67151 | -0.00026 |
+| 8 | 0.67138 | -0.00013 |
+
+K = 2 is the minimum tested value, as K = 1 (a single undifferentiated ancestral population) is biologically uninformative and serves no meaningful baseline for comparison. 
+
+**Best-fit K = 5** Cross-entropy decreases meaningfully from K = 2 to K = 5 (total reduction of 0.02385). At K = 6 the value increases slightly before plateauing through K = 7 and K = 8, where improvements become negligible ( < 0.0003 per step), indicating the model is overfitting beyond K = 5. K = 5 corresponds directly to the 5 superpopulations in 1000 Genomes dataset (AFR, EUR, EAS, SAS, AMR), consistent with the known demographic history of globally sampled human populations. Full visualization and biological interpretation of Q matrices are found in Step 5. 
 
 ### 4.3 Figures
 
@@ -237,7 +273,8 @@ PC1 is expected to represent the African vs. Non-African divergence, the deepest
 - This analysis currently uses chromosome 22 only. While sufficient for demonstrating the pipeline and validating methodology, full-genome analysis across all 22 autosomes would provide more precise population structure estimates and greater statistical power for ADMIXTURE.
 - The HWE filter was applied to the pooled multi-population sample. A more rigorous approach would apply HWE filters within each population separately, avoiding Wahlund effect false positives while catching true genotyping errors.
 - Sex chromosomes (X, Y) were excluded. Population structure on the X chromosome can reveal additional signals of sex-biased migration and demographic history.
-- PCA eigenvalues reflect chr22 only and are therefore not directly comparable to published whole-genome results. The high variance explained by PC1 (48.7%) and PC2 (24.1%) is inflated relative to full-genome estimates, where PC1  typically explains 10-20% of variance, because fewer total PCs are competing to explain the same population signal across a single chromosome. 
+- PCA eigenvalues reflect chr22 only and are therefore not directly comparable to published whole-genome results. The high variance explained by PC1 (48.7%) and PC2 (24.1%) is inflated relative to full-genome estimates, where PC1  typically explains 10-20% of variance, because fewer total PCs are competing to explain the same population signal across a single chromosome.
+- ADMIXTURE v1.3.0 could not be run on this system due to a segmentation fault (exit code 139) specific to WSL2. The LEA package's `snmf()` function was used as a direct substitute. While the algorithms are mathematically equivalent, results may differ slightly from published ADMIXTURE analyses due to differences in optimization implementation. Future work on a native Linux system or HPC cluster should validate results using ADMIXTURE directly. 
 
 ---
 
@@ -246,4 +283,5 @@ PC1 is expected to represent the African vs. Non-African divergence, the deepest
 1. 1000 Genomes Project Consortium (2015). A global reference for human genetic variation. *Nature*, 526, 68–74.
 2. Patterson, N., Price, A. L., & Reich, D. (2006). Population structure and eigenanalysis. *PLOS Genetics*, 2(12), e190.
 3. Alexander, D. H., Novembre, J., & Lange, K. (2009). Fast model-based estimation of ancestry in unrelated individuals. *Genome Research*, 19(9), 1655–1664.
-4. Chang, C. C., et al. (2015). Second-generation PLINK: rising to the challenge of larger and richer datasets. *GigaScience*, 4(1).
+4. Frichot, E., & François, O. (2015). LEA: An R package for landscape and ecological association studies. *Methods in Ecology and Evolution*, 6(8), 925–929.
+5. Chang, C. C., et al. (2015). Second-generation PLINK: rising to the challenge of larger and richer datasets. *GigaScience*, 4(1).
