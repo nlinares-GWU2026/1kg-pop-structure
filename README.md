@@ -6,7 +6,7 @@ A reproducible population genetics pipeline for analyzing human genetic diversit
 
 ## Background
 
-The 1000 Genomes Project sequenced 2,504 individuals from 26 populations across 5 contintental superpopulations (Africa-AFR, European-EUR, East Asian-EAS, South Asian-SAS, AMR-Admixed American). By analyzing patterns of common genetic variation across the genome, we can detect population structure and how the signatures of human migration, isolation, and admixture are written into our DNA. 
+The 1000 Genomes Project sequenced 2,504 individuals from 26 populations across 5 continental superpopulations (AFR — African, EUR — European, EAS — East Asian, SAS — South Asian, AMR — Admixed American). By analyzing patterns of common genetic variation across the genome, we can detect population structure and how the signatures of human migration, isolation, and admixture are written into our DNA. 
 
 This project demonstrates a complete population structure workflow applicable to any large-scale SNP dataset. 
 
@@ -48,24 +48,32 @@ This project demonstrates a complete population structure workflow applicable to
 ## Pipeline Overview
 
 ```
-RAW VCF (1000 Genomes)                 ->
+RAW VCF (1000 Genomes)                          ->
 
 Step 1: Data Acquisition
-curl from IGSR FTP server              ->
+curl from IGSR FTP server                       ->
 
 Step 2: Quality Control (PLINK)
 MAF > 5%, geno <5%, HWE p > 1e-6
-1,097,204 -> 68,355 SNPs               ->
+1,097,204 -> 68,355 SNPs                        ->
 
 Step 3: LD Pruning (PLINK)
-Window 50, step 10, r^2 < 0.2          ->
+Two pruned datasets created:           
+chr22_pruned (colon IDs for PCA)
+chr22_pruned_admix (underscore IDs) for sNMF    ->
 
-Step 4a: PCA - PLINK --pca
-Step 4b: sNMF (LEA) - K = 2-8, cross-entropy 
-(combined PLINK + ADMIXTURE)           ->
+Step 4a: PCA
+    PLINK --pca 10
+    chr22_pruned
+
+        +
+
+Step 4b: sNMF (LEA)
+    K = 2-8, cross-entropy
+    chr22_pruned_admix                          ->
 
 Step 5: Visualization
-Python / ggplot2
+Python (matplotlib, seaborn)
 ```
 
 ---
@@ -106,7 +114,7 @@ bash scripts/02_qc_filter.sh
 bash scripts/03_ld_prune.sh
 ```
 
-### 6. Run PCA and ADMIXTURE
+### 6. Run PCA and ancestry estimation
 
 ```bash
 bash scripts/04_pca.sh
