@@ -134,7 +134,7 @@ plink \
 
 Nearby SNPs on the same chromosome tend to be statistically correlated due to linkage disequilibrium (LD), which is the tendency for alleles at physically close loci to be inherited together rather than shuffling independently at each generation. This correlation is a direct consequence of the recombination pattern. Long haplotype blocks are passed from parent to child intact, meaning SNPs within a block carry a lot of redundant information.
 
-If correlated SNPs are included in PCA or ADMIXTURE without pruning, genomic regions with strong LD effectively receive an inflated weight in the analysis, where a dense LD block of "N" correlated SNPs contributes "N" times as much signal as a single SNP elsewhere. This can potentially drive the principal components that reflect local LD architecture rather than genome-wide ancestry patterns.  
+If correlated SNPs are included in PCA or sNMF without pruning, genomic regions with strong LD effectively receive an inflated weight in the analysis, where a dense LD block of "N" correlated SNPs contributes "N" times as much signal as a single SNP elsewhere. This can potentially drive the principal components that reflect local LD architecture rather than genome-wide ancestry patterns.  
 
 LD pruning was performed in 3 steps. First, because all 68,355 post-QC variants carried missing IDs (`.`) in the original VCF (this is a common feature of 1000 Genomes data where not all variants have assigned rsIDs), unique identifiers were assigned using PLINK's `--set-missing-var-ids` flag with the format `chromosome:position:ref_allele:alt_allele`:
 
@@ -192,7 +192,7 @@ plink \
   --out results/pca/chr22_pca
 ```
 
-PLINK computes PCA by first constructing a genetic relatedness matrix (GRM) - a 2,504 * 2,504 matrix where each cell describes the genotypic covariance between two individuals across all 7,751 pruned SNPs. Eigendecomposition of this matrix yields principal components ranked by the amount of genetic variance they explain. The top 10 principal components were retained. Concurrent execution (27 threads) was used automatically by PLINK for the matrix operations. 
+PLINK computes PCA by first constructing a genetic relatedness matrix (GRM) - a 2,504 * 2,504 matrix where each cell describes the genotypic covariance between two individuals across all 7,751 pruned SNPs. Eigendecomposition of this matrix yields principal components ranked by the amount of genetic variance they explain. The top 10 principal components were retained. Multithread computation (27 threads) was used automatically by PLINK for the matrix operations. 
 
 Output files:
 - `results/pca/chr22_pca.eigenval` — 10 eigenvalues
@@ -240,9 +240,7 @@ The top 10 principal components were computed from 7,751 LD-pruned SNPs across 2
 
 PC1 and PC2 together explain 72.8% of total genetic variance. This is a pronounced result demonstrating that the vast majority of population-level genetic signal is captured in just two dimensions. A sharp drop in variance is observed between PC4 (7.7%) and PC5 (1.9%), forming a clear scree plot elbow. This indicates that the four leading PCs capture the major axes of human population structure, while PC5 onward reflect finer-scale or residual variation. 
 
-PC1 is expected to represent the African vs. Non-African divergence, the deepest split in genetic diversity, capturing the out-of-Africa bottleneck ~ 60,000 - 70,000 years ago. PC2 likely captures the East Asian vs. European divergence. PC3 and PC4 are expected to reflect finer substructure within subpopulations. Visual confirmation of these interpretations will be provided by the PCA scatterplot (Section 4.3).
-
-Visual confirmation is provided in Figure 1 (Section 4.3). PC1 separates African (AFR) samples from all non-African populations, and PC2 separates East Asian (EAS) from European (EUR) samples, with South Asian (SAS) samples in an intermediate position. These interpretations are consistent with the eigenvalue distribution and known human demographic history. Admixed American (AMR) samples do not form a discrete cluster but instead scatter between the non-African groups, reflecting their mixed Indigenous American, European, and African ancestries in variable proportions across individuals. These interpretations are also consistent with the eigenvalue distribution and known human demographic history.
+PC1 represents the Africa vs. non-Africa divergence — the deepest split in human genetic diversity, reflecting the out-of-Africa bottleneck approximately 60,000–70,000 years ago. PC2 captures the East Asian vs. European divergence, with South Asian samples occupying an intermediate position. PC3 and PC4 likely reflect finer substructure within superpopulations. Visual confirmation is provided in Figure 1 (Section 4.3), where PC1 cleanly separates AFR from all non-African clusters and PC2 separates EAS from EUR. Admixed American (AMR) samples do not form a discrete cluster but scatter between the non-African groups, reflecting their mixed Indigenous American, European, and African ancestries in variable proportions across individuals — consistent with both the eigenvalue distribution and known human demographic history.
 
 ### 4.2 Ancestry Estimation (sNMF)
 
@@ -260,7 +258,7 @@ Cross-entropy values for K = 2 through K = 8 are summarized below:
 
 K = 2 is the minimum tested value, as K = 1 (a single undifferentiated ancestral population) is biologically uninformative and serves no meaningful baseline for comparison. 
 
-**Best-fit K = 5** Cross-entropy decreases meaningfully from K = 2 to K = 5 (total reduction of 0.02385). At K = 6 the value increases slightly before plateauing through K = 7 and K = 8, where improvements become negligible ( < 0.0003 per step), indicating the model is overfitting beyond K = 5. K = 5 corresponds directly to the 5 superpopulations in 1000 Genomes dataset (AFR, EUR, EAS, SAS, AMR), consistent with the known demographic history of globally sampled human populations. Full visualization and biological interpretation of Q matrices are found in Step 4.3. 
+**Best-fit K = 5** Cross-entropy decreases meaningfully from K = 2 to K = 5 (total reduction of 0.02385). At K = 6 the value increases slightly before plateauing through K = 7 and K = 8, where improvements become negligible ( < 0.0003 per step), indicating the model is overfitting beyond K = 5. K = 5 corresponds directly to the 5 superpopulations in 1000 Genomes dataset (AFR, EUR, EAS, SAS, AMR), consistent with the known demographic history of globally sampled human populations. Full visualization and biological interpretation of Q matrices are shown in Step 4.3. 
 
 ### 4.3 Figures
 
@@ -292,7 +290,7 @@ PC1 explains 48.7% of genetic variance, followed by PC2 at 24.1%. Together, they
 
 **Figure 3 — sNMF Ancestry Bar Chart (K = 5)**
 
-*File: `results/plots/admixture_K5.png`*
+*File: `results/plots/snmf_K5.png`*
 
 At K = 5, the 5 ancestral components map cleanly onto the 5 superpopulations. Ancestral component colors were assigned using the Hungarian algorithm for the best one-to-one mapping between components and superpopulations, ensuring each group receives a unique color regardless of component numbering by the algorithm. 
 
