@@ -307,7 +307,7 @@ ax.set_title(
 
 plt.tight_layout()
 plt.savefig(
-    "results/plots/admixture_K5.png",
+    "results/plots/snmf_K5.png",
     dpi=150,
     bbox_inches="tight"
 )
