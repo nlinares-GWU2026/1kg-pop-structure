@@ -15,5 +15,5 @@
 # and ecological association studies. Methods in Ecology and Evolution.
 
 echo "Running sNMF ancestry estimation via LEA R package..."
-Rscript scripts/05_admixture.R
+Rscript scripts/05_snmf.R
 echo "Done. Check results/admixture/ for Q matrices and cross-entropy values."
