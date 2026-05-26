@@ -29,9 +29,10 @@ This project demonstrates a complete population structure workflow applicable to
 │   |-- 02_qc_filter.sh        <- PLINK quality control and filtering
 │   |-- 03_ld_prune.sh         <- LD pruning for independent SNPs
 │   |-- 04_pca.sh              <- PCA via PLINK
-│   |-- 05_admixture.sh        <- ADMIXTURE ancestry estimation (see note in Troubleshooting)
-|   |-- 05_admixture.R         <- sNMF ancestry estimation via LEA R package
-│   |-- 06_visualize.py        <- Python visualization (PCA + ADMIXTURE plots)
+│   |-- 05_snmf.sh             <- documents WSL2 incompatibility, calls 05_snmf.R
+(see Troubleshooting)
+|   |-- 05_snmf.R              <- sNMF ancestry estimation via LEA R package
+│   |-- 06_visualize.py        <- Python visualization (PCA + sNMF plots)
 |-- workflow/
 │   |-- Snakefile              <- Snakemake pipeline (end-to-end automation)
 |-- results/
@@ -118,9 +119,10 @@ bash scripts/03_ld_prune.sh
 
 ```bash
 bash scripts/04_pca.sh
-bash scripts/05_admixture.sh   # see Troubleshooting if on WSL2
-Rscript scripts/05_admixture.R
+Rscript scripts/05_snmf.R
 ```
+> **Note:** `scripts/05_snmf.sh` documents why ADMIXTURE v1.3.0 was not used on this system (WSL2 incompatibility). Ancestry estimation is performed entirely via `scripts/05_snmf.R` using the LEA R package.
+> See the Troubleshooting section for details. 
 
 ### 7. Generate plots
 
@@ -149,7 +151,7 @@ python scripts/06_visualize.py
 
 - **QC filtering:** 1,097,204 -> 68,355 SNPs retained on chromosome 22 after MAF, HWE, and missingness filters
 - **LD pruning:** 68,355 → 7,751 independent SNPs retained (r² < 0.2)
-- **PCA:** PC1 and PC2 encapsulate global geography, separating AFR, EUR, EAS, SAS, and AMR superpopulations. PC1 and PC2 explain 72.8% of genetic variance; expected to recapitulate global geography separating the 5 superpopulations.
+- **PCA:**PC1 and PC2 explain 72.8% of genetic variance, separating AFR, EUR, EAS, SAS, and AMR superpopulations. PC1 captures the Africa vs. non-Africa split; PC2 captures the East Asian vs. European divergence.
 - **sNMF:** Best-fit K = 5 (cross-entropy = 0.67164), corresponding to the 5 superpopulations (AFR, EUR, EAS, SAS, AMR)
 
 ---
@@ -191,7 +193,7 @@ dependencies:
 
 **ADMIXTURE v1.3.0 on WSL2:** Produces a segmentation fault (exit code 139) immediately after reading genotype data on WSL2. This occurs even after `ulimit -s unlimited` and is caused by incompatibility between the statically linked binary and WSL2's memory model. Ancestry estimation was performed using R's LEA package (`snmf()`) instead. It is a mathematically equivalent algorithm producing directly comparable Q matrices and cross-entropy values. 
 
-**SNP IDs with colons:** ADMIXTURE 1.3.0 also crashes silently when SNP IDs contain colons (for example: `NN:XXXXXXXX:A:C`). Two separate LD-pruned datasets were created: `chr22_pruned` with colon IDs for PCA, and `chr22_pruned_admix` with underscore IDs for sNMF.
+**SNP IDs with colons:** ADMIXTURE 1.3.0 also crashes silently when SNP IDs contain colons (for example: `22:17908596:A:C`). Two separate LD-pruned datasets were created: `chr22_pruned` with colon IDs for PCA, and `chr22_pruned_admix` with underscore IDs for sNMF.
 
 ---
 
