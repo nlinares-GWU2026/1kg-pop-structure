@@ -308,7 +308,7 @@ At K = 5, the 5 ancestral components map cleanly onto the 5 superpopulations. An
 
 ## 5. Limitations
 
-- This analysis currently uses chromosome 22 only. While sufficient for demonstrating the pipeline and validating methodology, full-genome analysis across all 22 autosomes would provide more precise population structure estimates and greater statistical power for ADMIXTURE.
+- This analysis currently uses chromosome 22 only. While sufficient for demonstrating the pipeline and validating methodology, full-genome analysis across all 22 autosomes would provide more precise population structure estimates and greater statistical power for ancestry estimation.
 - The HWE filter was applied to the pooled multi-population sample. A more rigorous approach would apply HWE filters within each population separately, avoiding Wahlund effect false positives while catching true genotyping errors.
 - Sex chromosomes (X, Y) were excluded. Population structure on the X chromosome can reveal additional signals of sex-biased migration and demographic history.
 - PCA eigenvalues reflect chr22 only and are therefore not directly comparable to published whole-genome results. The high variance explained by PC1 (48.7%) and PC2 (24.1%) is inflated relative to full-genome estimates, where PC1  typically explains 10-20% of variance, because fewer total PCs are competing to explain the same population signal across a single chromosome.
